@@ -145,7 +145,9 @@ export default function ShowListing({ listing, comments, related, can }: Props) 
                                     {listing.status !== 'sold' && <Button size="sm" variant="outline" onClick={() => setStatus('sold')}>Mark sold</Button>}
                                     {listing.status !== 'hidden' && <Button size="sm" variant="outline" onClick={() => setStatus('hide')}>Hide</Button>}
                                     {listing.status === 'active' && (
-                                        can.boosts_left > 0 ? (
+                                        listing.boosted ? (
+                                            <Button size="sm" variant="outline" disabled className="gap-1"><Rocket className="size-3" /> Boosted</Button>
+                                        ) : can.boosts_left > 0 ? (
                                             <Button size="sm" onClick={boost} className="gap-1"><Rocket className="size-3" /> Boost ({can.boosts_left} left)</Button>
                                         ) : (
                                             <Button asChild size="sm" variant="outline" className="gap-1"><Link href="/plans"><Rocket className="size-3" /> Get boosts</Link></Button>

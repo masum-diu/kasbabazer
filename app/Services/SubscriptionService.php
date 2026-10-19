@@ -78,6 +78,10 @@ class SubscriptionService
             throw ValidationException::withMessages(['boost' => ['Only available listings can be boosted.']]);
         }
 
+        if ($listing->boosted_until?->isFuture()) {
+            throw ValidationException::withMessages(['boost' => ['This listing is already boosted until '.$listing->boosted_until->format('d M, h:i A').'.']]);
+        }
+
         if ($this->boostsRemaining($user) < 1) {
             throw ValidationException::withMessages(['boost' => ['No boosts left on your plan. Upgrade to get more.']]);
         }

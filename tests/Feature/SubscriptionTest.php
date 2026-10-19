@@ -157,6 +157,11 @@ class SubscriptionTest extends TestCase
         $this->actingAs($seller)->post("/listings/{$old->slug}/boost")->assertRedirect();
         $this->assertNotNull($old->fresh()->boosted_until);
 
+        // Boosting again while still boosted is refused and does not use up another boost.
+        $left = app(SubscriptionService::class)->boostsRemaining($seller);
+        $this->post("/listings/{$old->slug}/boost")->assertSessionHasErrors('boost');
+        $this->assertSame($left, app(SubscriptionService::class)->boostsRemaining($seller));
+
         $this->get('/')->assertInertia(fn (Assert $p) => $p->where('listings.data.0.slug', $old->slug)->where('listings.data.0.boosted', true));
 
         // Basic = 2 boosts per period.
