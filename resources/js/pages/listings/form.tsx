@@ -11,6 +11,7 @@ import type { Category, Listing } from '@/types/market';
 
 type Props = {
     listing: Listing | null;
+    default_phone?: string | null;
     categories: Category[];
     plan: { name: string; listing_limit: number | null; photo_limit: number; active_listings: number; boosts_left: number };
 };
@@ -37,7 +38,7 @@ function FeedPickButton({ position, full, onClick }: { position: number; full: b
     );
 }
 
-export default function ListingForm({ listing, categories, plan }: Props) {
+export default function ListingForm({ listing, categories, plan, default_phone }: Props) {
     const MAX_IMAGES = Math.min(plan.photo_limit, 5);
     const atLimit = plan.listing_limit !== null && plan.active_listings >= plan.listing_limit;
     const editing = listing !== null;
@@ -49,6 +50,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
         is_negotiable: listing?.is_negotiable ?? false,
         condition: listing?.condition ?? 'used_good',
         quantity: listing?.quantity ? String(listing.quantity) : '',
+        contact_phone: listing ? (listing.contact_phone ?? '') : (default_phone ?? ''),
     });
     const [files, setFiles] = useState<File[]>([]);
     const [removed, setRemoved] = useState<number[]>([]);
@@ -209,6 +211,13 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         <Input id="quantity" type="number" min={1} value={values.quantity} onChange={(e) => set('quantity', e.target.value)} placeholder="Leave empty if not applicable" />
                         <InputError message={errors.quantity} />
                     </div>
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="contact_phone">Contact number <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                    <Input id="contact_phone" type="tel" inputMode="tel" value={values.contact_phone} onChange={(e) => set('contact_phone', e.target.value)} placeholder="01XXXXXXXXX" maxLength={20} />
+                    <p className="text-xs text-muted-foreground">Phone or WhatsApp number for buyers to call. Only signed-in users can see it.</p>
+                    <InputError message={errors.contact_phone} />
                 </div>
 
                 <label className="flex items-center gap-2 text-sm">

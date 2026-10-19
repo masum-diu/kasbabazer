@@ -28,6 +28,9 @@ class ListingResource extends JsonResource
             'condition' => $this->condition,
             'status' => $this->status,
             'quantity' => $this->quantity,
+            // The number is only revealed to signed-in users, so it cannot be scraped from public pages.
+            'has_contact' => $this->contact_phone !== null,
+            'contact_phone' => $request->user() ? $this->contact_phone : null,
             'views_count' => $this->views_count,
             'likes_count' => $this->likes_count,
             'comments_count' => $this->comments_count,

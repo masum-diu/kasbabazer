@@ -111,6 +111,7 @@ class ListingController extends Controller
 
         return Inertia::render('listings/form', [
             'listing' => null,
+            'default_phone' => $request->user()->sellerProfile?->phone,
             'plan' => $this->planInfo($request),
             'categories' => $this->categoryOptions(),
         ]);

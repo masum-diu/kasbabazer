@@ -194,6 +194,21 @@ class SubscriptionTest extends TestCase
         $this->post('/listings', $this->payload(['quantity' => 0]))->assertSessionHasErrors('quantity');
     }
 
+    public function test_contact_number_is_only_shown_to_signed_in_users(): void
+    {
+        $user = $this->seller();
+
+        $this->actingAs($user)->post('/listings', $this->payload(['contact_phone' => '01712345678']))->assertRedirect();
+        $listing = Listing::firstOrFail();
+        $this->assertSame('01712345678', $listing->contact_phone);
+
+        $this->post('/listings', $this->payload(['contact_phone' => 'call me']))->assertSessionHasErrors('contact_phone');
+
+        auth()->logout();
+        $this->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.has_contact', true)->where('listing.contact_phone', null));
+        $this->actingAs(User::factory()->create())->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.contact_phone', '01712345678'));
+    }
+
     public function test_boost_uses_plan_allowance_and_floats_listing_to_top(): void
     {
         $seller = $this->seller();

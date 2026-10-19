@@ -37,6 +37,8 @@ export type Listing = {
     condition: string;
     status: string;
     quantity: number | null;
+    has_contact?: boolean;
+    contact_phone?: string | null;
     views_count: number;
     likes_count: number;
     comments_count: number;

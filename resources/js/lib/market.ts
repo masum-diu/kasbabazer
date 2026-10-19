@@ -54,3 +54,13 @@ export const tones = [
 export function tone(seed: number): string {
     return tones[Math.abs(seed) % tones.length];
 }
+/** WhatsApp wants the number in international form without "+": 01712345678 becomes 8801712345678. */
+export function whatsappNumber(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+
+    if (digits.startsWith('880')) {
+        return digits;
+    }
+
+    return `880${digits.replace(/^0/, '')}`;
+}

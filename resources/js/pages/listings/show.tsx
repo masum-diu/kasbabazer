@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage, WhenVisible } from '@inertiajs/react';
-import { BadgeCheck, Bookmark, Eye, Heart, MapPin, MessageCircle, Pencil, Rocket, Share2, Star, ThumbsUp } from 'lucide-react';
+import { BadgeCheck, Bookmark, Eye, Heart, MapPin, MessageCircle, Pencil, Phone, Rocket, Share2, Star, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import CommentThread from '@/components/market/comment-thread';
@@ -10,7 +10,7 @@ import UserAvatar from '@/components/market/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { conditionLabels, formatPrice, statusLabels, timeAgo } from '@/lib/market';
+import { conditionLabels, formatPrice, statusLabels, timeAgo, whatsappNumber } from '@/lib/market';
 import type { Comment, Listing } from '@/types/market';
 
 type Props = {
@@ -189,6 +189,24 @@ export default function ShowListing({ listing, comments, related, can }: Props) 
                             {!can.manage && <ReportButton type="listing" id={listing.id} />}
                         </div>
                     </div>
+
+                    {listing.has_contact && (
+                        <div className="rounded-2xl border p-5">
+                            <p className="mb-3 text-sm font-medium text-muted-foreground">Contact</p>
+                            {listing.contact_phone ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Button asChild size="sm" className="gap-1">
+                                        <a href={`tel:${listing.contact_phone.replace(/[^+\d]/g, '')}`}><Phone className="size-4" /> {listing.contact_phone}</a>
+                                    </Button>
+                                    <Button asChild size="sm" variant="outline">
+                                        <a href={`https://wa.me/${whatsappNumber(listing.contact_phone)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button asChild size="sm" variant="outline"><Link href="/sign-in">Sign in to see the number</Link></Button>
+                            )}
+                        </div>
+                    )}
 
                     {listing.seller && (
                         <div className="rounded-2xl border p-5">
