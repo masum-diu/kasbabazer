@@ -44,7 +44,8 @@ export type Listing = {
     boosted?: boolean;
     category?: { id: number; name: string };
     location?: { id: number; name: string } | null;
-    images?: { id: number; url: string }[];
+    images?: { id: number; url: string; on_feed?: boolean }[];
+    feed_images?: { id: number; url: string }[];
     thumbnail?: string | null;
     seller?: Seller;
     viewer: { saved: boolean; reaction: string | null };

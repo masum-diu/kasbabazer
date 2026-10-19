@@ -122,7 +122,7 @@ class ListingController extends Controller
             return $redirect;
         }
 
-        $data = $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft', 'cover']);
+        $data = $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft', 'feed']);
 
         if (! $request->boolean('save_as_draft')) {
             $this->subscriptions->assertCanPublish($request->user());
@@ -134,7 +134,7 @@ class ListingController extends Controller
             $data,
             $request->file('images', []),
             publish: ! $request->boolean('save_as_draft'),
-            cover: $request->input('cover'),
+            feed: $request->input('feed', []),
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Listing created.']);
@@ -162,10 +162,10 @@ class ListingController extends Controller
 
         $this->listings->update(
             $listing,
-            $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft', 'cover']),
+            $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft', 'feed']),
             $request->file('images', []),
             array_map('intval', $request->input('remove_image_ids', [])),
-            $request->input('cover'),
+            $request->input('feed', []),
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Listing updated.']);

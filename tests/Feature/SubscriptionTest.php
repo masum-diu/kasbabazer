@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\ListingResource;
 use App\Models\Category;
 use App\Models\Listing;
 use App\Models\SellerProfile;
@@ -141,7 +142,7 @@ class SubscriptionTest extends TestCase
         $this->actingAs($user)->post('/listings', $this->payload(['images' => $files(3)]))->assertRedirect();
     }
 
-    public function test_listing_never_holds_more_than_five_photos_and_the_seller_picks_the_cover(): void
+    public function test_listing_never_holds_more_than_five_photos_and_the_seller_picks_home_feed_photos(): void
     {
         $user = $this->seller();
         $admin = User::factory()->admin()->create();
@@ -154,16 +155,26 @@ class SubscriptionTest extends TestCase
         // Even the top plan stops at 5 photos.
         $this->actingAs($user)->post('/listings', $this->payload(['images' => $files(6)]))->assertSessionHasErrors('images');
 
-        // Choose the 4th upload as the cover: it moves to the front.
-        $this->post('/listings', $this->payload(['images' => $files(5), 'cover' => 'n:3']))->assertRedirect();
+        // Pick the 4th then the 2nd upload for the home feed: they lead, in that order.
+        $this->post('/listings', $this->payload(['images' => $files(5), 'feed' => ['n:3', 'n:1']]))->assertRedirect();
         $listing = Listing::with('images')->firstOrFail();
         $created = $listing->images()->reorder('id')->pluck('id')->all();
         $this->assertCount(5, $created);
-        $this->assertSame($created[3], $listing->images->first()->id);
+        $this->assertSame([$created[3], $created[1]], $listing->images()->where('on_feed', true)->pluck('id')->all());
+        $this->assertSame($created[3], $listing->images()->first()->id);
+        $this->assertCount(2, (new ListingResource($listing->fresh('images')))->resolve()['feed_images']);
 
-        // Switch the cover to an existing photo while editing.
-        $this->post("/listings/{$listing->slug}/update", $this->payload(['cover' => 'e:'.$created[1]]))->assertRedirect();
-        $this->assertSame($created[1], $listing->images()->first()->id);
+        // More than 3 home photos is rejected.
+        $this->post("/listings/{$listing->slug}/update", $this->payload(['feed' => ['e:'.$created[0], 'e:'.$created[1], 'e:'.$created[2], 'e:'.$created[3]]]))->assertSessionHasErrors('feed');
+
+        // Switch to a single existing photo while editing.
+        $this->post("/listings/{$listing->slug}/update", $this->payload(['feed' => ['e:'.$created[4]]]))->assertRedirect();
+        $this->assertSame([$created[4]], $listing->images()->where('on_feed', true)->pluck('id')->all());
+        $this->assertSame($created[4], $listing->images()->first()->id);
+
+        // Saving without a choice keeps the existing pick.
+        $this->post("/listings/{$listing->slug}/update", $this->payload())->assertRedirect();
+        $this->assertSame([$created[4]], $listing->images()->where('on_feed', true)->pluck('id')->all());
     }
 
     public function test_boost_uses_plan_allowance_and_floats_listing_to_top(): void

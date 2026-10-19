@@ -71,9 +71,9 @@ class ListingService
      * @param  array<string, mixed>  $data
      * @param  array<int, UploadedFile>  $images
      */
-    public function create(User $user, array $data, array $images = [], bool $publish = true, ?string $cover = null): Listing
+    public function create(User $user, array $data, array $images = [], bool $publish = true, array $feed = []): Listing
     {
-        return DB::transaction(function () use ($user, $data, $images, $publish, $cover) {
+        return DB::transaction(function () use ($user, $data, $images, $publish, $feed) {
             $listing = new Listing($data);
             $listing->forceFill([
                 'user_id' => $user->id,
@@ -82,7 +82,7 @@ class ListingService
                 'published_at' => $publish ? now() : null,
             ])->save();
 
-            $this->applyCover($listing, $cover, $this->storeImages($listing, $images));
+            $this->applyFeedPhotos($listing, $feed, $this->storeImages($listing, $images));
 
             return $listing;
         });
@@ -93,9 +93,9 @@ class ListingService
      * @param  array<int, UploadedFile>  $images
      * @param  array<int, int>  $removeImageIds
      */
-    public function update(Listing $listing, array $data, array $images = [], array $removeImageIds = [], ?string $cover = null): Listing
+    public function update(Listing $listing, array $data, array $images = [], array $removeImageIds = [], array $feed = []): Listing
     {
-        return DB::transaction(function () use ($listing, $data, $images, $removeImageIds, $cover) {
+        return DB::transaction(function () use ($listing, $data, $images, $removeImageIds, $feed) {
             $listing->update($data);
 
             foreach ($listing->images()->whereIn('id', $removeImageIds)->get() as $image) {
@@ -105,7 +105,7 @@ class ListingService
                 $image->delete();
             }
 
-            $this->applyCover($listing, $cover, $this->storeImages($listing, $images));
+            $this->applyFeedPhotos($listing, $feed, $this->storeImages($listing, $images));
 
             return $listing;
         });
@@ -180,25 +180,39 @@ class ListingService
     }
 
     /**
-     * Move the chosen photo to the front. The first photo is the cover used on the home feed and cards.
+     * Mark up to 3 photos to show on the home feed and move them to the front, in the order chosen.
+     * The first one is the cover used on cards. Without a choice the first photos are used.
      *
+     * @param  array<int, string>  $feed  keys like "e:<image id>" or "n:<index of a new upload>"
      * @param  array<int, ListingImage>  $stored
      */
-    private function applyCover(Listing $listing, ?string $cover, array $stored): void
+    private function applyFeedPhotos(Listing $listing, array $feed, array $stored): void
     {
-        if (! $cover || ! preg_match('/^([en]):(\d+)$/', $cover, $m)) {
-            return;
-        }
-
-        $coverId = $m[1] === 'e' ? (int) $m[2] : ($stored[(int) $m[2]]->id ?? null);
         $ids = $listing->images()->pluck('id')->all(); // already in sort order
+        $chosen = [];
 
-        if ($coverId === null || ! in_array($coverId, $ids, true)) {
-            return;
+        foreach ($feed as $key) {
+            if (! preg_match('/^([en]):(\d+)$/', (string) $key, $m)) {
+                continue;
+            }
+
+            $id = $m[1] === 'e' ? (int) $m[2] : ($stored[(int) $m[2]]->id ?? null);
+
+            if ($id !== null && in_array($id, $ids, true) && ! in_array($id, $chosen, true)) {
+                $chosen[] = $id;
+            }
         }
 
-        foreach ([$coverId, ...array_diff($ids, [$coverId])] as $position => $id) {
-            ListingImage::whereKey($id)->update(['sort_order' => $position]);
+        $chosen = array_slice($chosen, 0, Listing::MAX_FEED_PHOTOS);
+
+        if ($chosen === []) {
+            // No explicit choice: keep what the seller had, or fall back to the first photos.
+            $chosen = $listing->images()->where('on_feed', true)->pluck('id')->all() ?: array_slice($ids, 0, Listing::MAX_FEED_PHOTOS);
+            $chosen = array_values(array_intersect($ids, $chosen));
+        }
+
+        foreach ([...$chosen, ...array_diff($ids, $chosen)] as $position => $id) {
+            ListingImage::whereKey($id)->update(['sort_order' => $position, 'on_feed' => in_array($id, $chosen, true)]);
         }
     }
 

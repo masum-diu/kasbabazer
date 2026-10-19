@@ -17,7 +17,7 @@ export default function FeedPost({ listing }: { listing: Listing }) {
     const [saved, setSaved] = useState(listing.viewer.saved);
     const [expanded, setExpanded] = useState(false);
 
-    const images = (listing.images ?? []).slice(0, 3);
+    const images = (listing.feed_images ?? listing.images ?? []).slice(0, 3);
     const url = `/listings/${listing.slug}`;
     const long = listing.description.length > 140;
     const requireAuth = (fn: () => void) => (auth.user ? fn() : router.visit('/sign-in'));

@@ -27,6 +27,9 @@ class Listing extends Model
     /** Most photos any listing can have, whatever the plan. */
     public const MAX_PHOTOS = 5;
 
+    /** Most photos that can be shown on the home feed for one listing. */
+    public const MAX_FEED_PHOTOS = 3;
+
     public const CONDITIONS = ['new', 'used_like_new', 'used_good', 'used_fair'];
 
     public const STATUSES = ['draft', 'active', 'reserved', 'sold', 'hidden', 'expired'];

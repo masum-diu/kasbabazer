@@ -15,12 +15,22 @@ type Props = {
 };
 
 
-function CoverButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-    return active ? (
-        <span className="absolute inset-x-0 bottom-0 bg-primary/90 py-0.5 text-center text-[10px] font-semibold text-primary-foreground">Cover</span>
-    ) : (
-        <button type="button" onClick={onClick} className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[10px] font-medium text-white hover:bg-black/80">
-            Make cover
+type Pick = { type: 'e'; id: number } | { type: 'n'; file: File };
+const MAX_FEED = 3;
+
+/** Toggle a photo for the home feed. `position` is its place among the picked photos (-1 = not picked). */
+function FeedPickButton({ position, full, onClick }: { position: number; full: boolean; onClick: () => void }) {
+    if (position >= 0) {
+        return (
+            <button type="button" onClick={onClick} aria-pressed="true" className="absolute inset-x-0 bottom-0 bg-primary/90 py-0.5 text-center text-[10px] font-semibold text-primary-foreground">
+                {position === 0 ? 'Cover ✓' : `Home #${position + 1} ✓`}
+            </button>
+        );
+    }
+
+    return (
+        <button type="button" onClick={onClick} disabled={full} aria-pressed="false" className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[10px] font-medium text-white hover:bg-black/80 disabled:opacity-50">
+            Show on home
         </button>
     );
 }
@@ -40,20 +50,27 @@ export default function ListingForm({ listing, categories, plan }: Props) {
     });
     const [files, setFiles] = useState<File[]>([]);
     const [removed, setRemoved] = useState<number[]>([]);
-    // The cover is the photo that leads the post and the home feed. null = first photo.
-    const [cover, setCover] = useState<{ type: 'e'; id: number } | { type: 'n'; file: File } | null>(null);
+    // Photos to show on the home feed (1 to 3, in the order picked; the first is the cover). Empty = the first photos.
+    const [picked, setPicked] = useState<Pick[]>(() =>
+        (listing?.images ?? []).filter((i) => i.on_feed).slice(0, MAX_FEED).map((i): Pick => ({ type: 'e', id: i.id })),
+    );
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
 
     const existing = (listing?.images ?? []).filter((i) => !removed.includes(i.id));
     const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
-    const isCover = (kind: 'e' | 'n', ref: number | File) => {
-        if (cover) {
-            return cover.type === kind && (cover.type === 'e' ? cover.id === ref : cover.file === ref);
-        }
+    // Drop picks whose photo was removed.
+    const activePicks = picked.filter((p) => (p.type === 'e' ? existing.some((e) => e.id === p.id) : files.includes(p.file)));
+    const pickIndex = (kind: 'e' | 'n', ref: number | File) =>
+        activePicks.findIndex((p) => p.type === kind && (p.type === 'e' ? p.id === ref : p.file === ref));
+    const togglePick = (kind: 'e' | 'n', ref: number | File) => {
+        const at = pickIndex(kind, ref);
 
-        // Default: the first photo.
-        return existing.length > 0 ? kind === 'e' && existing[0].id === ref : kind === 'n' && files[0] === ref;
+        if (at >= 0) {
+            setPicked(activePicks.filter((_, idx) => idx !== at));
+        } else if (activePicks.length < MAX_FEED) {
+            setPicked([...activePicks, kind === 'e' ? { type: 'e', id: ref as number } : { type: 'n', file: ref as File }]);
+        }
     };
     const slots = MAX_IMAGES - existing.length - files.length;
 
@@ -71,7 +88,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                 save_as_draft: asDraft ? 1 : 0,
                 images: files,
                 remove_image_ids: removed,
-                ...(cover && (cover.type === 'e' ? { cover: `e:${cover.id}` } : files.includes(cover.file) ? { cover: `n:${files.indexOf(cover.file)}` } : {})),
+                feed: activePicks.map((p) => (p.type === 'e' ? `e:${p.id}` : `n:${files.indexOf(p.file)}`)),
             },
             {
                 forceFormData: true,
@@ -110,7 +127,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         {existing.map((image) => (
                             <div key={image.id} className="relative size-24 overflow-hidden rounded-lg border">
                                 <img src={image.url} alt="" className="size-full object-cover" />
-                                <CoverButton active={isCover('e', image.id)} onClick={() => setCover({ type: 'e', id: image.id })} />
+                                <FeedPickButton position={pickIndex('e', image.id)} full={activePicks.length >= MAX_FEED} onClick={() => togglePick('e', image.id)} />
                                 <button type="button" aria-label="Remove photo" onClick={() => setRemoved((r) => [...r, image.id])} className="absolute top-1 right-1 rounded-full bg-background/90 p-0.5">
                                     <X className="size-3" />
                                 </button>
@@ -119,7 +136,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         {previews.map((src, i) => (
                             <div key={src} className="relative size-24 overflow-hidden rounded-lg border">
                                 <img src={src} alt="" className="size-full object-cover" />
-                                <CoverButton active={isCover('n', files[i])} onClick={() => setCover({ type: 'n', file: files[i] })} />
+                                <FeedPickButton position={pickIndex('n', files[i])} full={activePicks.length >= MAX_FEED} onClick={() => togglePick('n', files[i])} />
                                 <button type="button" aria-label="Remove photo" onClick={() => setFiles((f) => f.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 rounded-full bg-background/90 p-0.5">
                                     <X className="size-3" />
                                 </button>
@@ -144,7 +161,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         )}
                     </div>
                     {existing.length + files.length > 1 && (
-                        <p className="text-xs text-muted-foreground">Tap <strong>Make cover</strong> on a photo to choose the main one. The home feed shows the cover plus up to 2 more photos.</p>
+                        <p className="text-xs text-muted-foreground">Tap <strong>Show on home</strong> to choose which photos appear on the home feed: pick 1, or up to 3. The first one you pick is the cover. If you pick none, the first photos are used.</p>
                     )}
                     <InputError message={errors.images ?? errors['images.0'] ?? errors.plan} />
                 </div>

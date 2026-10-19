@@ -35,7 +35,9 @@ class ListingResource extends JsonResource
             'boosted' => $this->boosted_until !== null && $this->boosted_until->isFuture(),
             'category' => $this->whenLoaded('category', fn () => ['id' => $this->category->id, 'name' => $this->category->name]),
             'location' => $this->whenLoaded('location', fn () => $this->location ? ['id' => $this->location->id, 'name' => $this->location->name] : null),
-            'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($i) => ['id' => $i->id, 'url' => $i->url])->values()),
+            'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($i) => ['id' => $i->id, 'url' => $i->url, 'on_feed' => (bool) $i->on_feed])->values()),
+            // Photos the seller picked for the home feed (cover first); the first few when none were picked.
+            'feed_images' => $this->whenLoaded('images', fn () => ($this->images->where('on_feed', true)->isNotEmpty() ? $this->images->where('on_feed', true) : $this->images->take(Listing::MAX_FEED_PHOTOS))->map(fn ($i) => ['id' => $i->id, 'url' => $i->url])->values()),
             'thumbnail' => $this->whenLoaded('images', fn () => $this->images->first()?->url),
             'seller' => $this->whenLoaded('user', fn () => [
                 'id' => $user->id,
