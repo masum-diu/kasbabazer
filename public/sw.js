@@ -4,7 +4,7 @@
  * - Everything else (Inertia JSON, POSTs, auth, API) always goes to the network and is never cached,
  *   so private data is not stored in the cache.
  */
-const VERSION = 'kb-v1';
+const VERSION = 'kb-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const PRECACHE = ['/offline.html', '/icons/icon-192.png', '/icons/icon-512.png', '/manifest.webmanifest'];
 
