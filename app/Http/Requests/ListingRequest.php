@@ -12,6 +12,14 @@ class ListingRequest extends FormRequest
         return true; // Ownership is enforced by ListingPolicy in the controller.
     }
 
+    /** A blank price means "contact for price" and is stored as 0. */
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('price') === null || $this->input('price') === '') {
+            $this->merge(['price' => 0]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -22,7 +30,7 @@ class ListingRequest extends FormRequest
             'description' => ['required', 'string', 'min:10', 'max:5000'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'location_id' => ['nullable', 'integer', 'exists:locations,id'],
-            'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'price' => ['required', 'numeric', 'min:0', 'max:999999999'], // 0 = "contact for price"
             'is_negotiable' => ['boolean'],
             'condition' => ['required', 'in:'.implode(',', Listing::CONDITIONS)],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:10000'],

@@ -45,7 +45,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
         title: listing?.title ?? '',
         description: listing?.description ?? '',
         category_id: listing?.category ? String(listing.category.id) : '',
-        price: listing ? String(listing.price) : '',
+        price: listing && listing.price > 0 ? String(listing.price) : '',
         is_negotiable: listing?.is_negotiable ?? false,
         condition: listing?.condition ?? 'used_good',
         quantity: listing?.quantity ? String(listing.quantity) : '',
@@ -200,8 +200,8 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         <InputError message={errors.condition} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="price">Price (৳)</Label>
-                        <Input id="price" type="number" min={0} value={values.price} onChange={(e) => set('price', e.target.value)} required />
+                        <Label htmlFor="price">Price (৳) <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                        <Input id="price" type="number" min={0} value={values.price} onChange={(e) => set('price', e.target.value)} placeholder="Empty = Contact for price" />
                         <InputError message={errors.price} />
                     </div>
                     <div className="grid gap-2">

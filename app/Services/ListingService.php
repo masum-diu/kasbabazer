@@ -57,7 +57,8 @@ class ListingService
 
         match ($filters['sort'] ?? 'latest') {
             'oldest' => $query->orderBy('published_at'),
-            'price_low' => $query->orderBy('price'),
+            // Items without a price (0) go last instead of topping the cheapest-first list.
+            'price_low' => $query->orderByRaw('price = 0')->orderBy('price'),
             'price_high' => $query->orderByDesc('price'),
             'popular' => $query->orderByRaw('(likes_count * 3 + comments_count * 2 + views_count) DESC'),
             // Boosted posts float to the top of the default feed while their boost lasts.

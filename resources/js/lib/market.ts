@@ -1,7 +1,7 @@
 const taka = new Intl.NumberFormat('en-BD', { maximumFractionDigits: 0 });
 
 export function formatPrice(price: number): string {
-    return price === 0 ? 'Free / Ask' : `৳ ${taka.format(price)}`;
+    return price === 0 ? 'Contact for price' : `৳ ${taka.format(price)}`;
 }
 
 export const conditionLabels: Record<string, string> = {

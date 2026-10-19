@@ -186,6 +186,10 @@ class SubscriptionTest extends TestCase
         $this->assertNull($listing->quantity);
 
         $this->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.quantity', null));
+        // Price is optional too (a banner/ad post): blank is stored as 0 = "contact for price".
+        $this->post('/listings', $this->payload(['title' => 'Cosmetics banner', 'price' => '', 'quantity' => '']))->assertRedirect();
+        $this->assertSame(0, (int) Listing::where('title', 'Cosmetics banner')->firstOrFail()->price);
+
         // A quantity, when given, must still be a positive number.
         $this->post('/listings', $this->payload(['quantity' => 0]))->assertSessionHasErrors('quantity');
     }
