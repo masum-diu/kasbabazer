@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ImagePlus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ type Props = {
 
 type Pick = { type: 'e'; id: number } | { type: 'n'; file: File };
 const MAX_FEED = 3;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 /** Toggle a photo for the home feed. `position` is its place among the picked photos (-1 = not picked). */
 function FeedPickButton({ position, full, onClick }: { position: number; full: boolean; onClick: () => void }) {
@@ -122,7 +124,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
 
                 <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                 <div className="grid gap-2 rounded-xl border bg-card p-4">
-                    <Label>Photos (up to {MAX_IMAGES}, JPG/PNG/WebP, max 4 MB each)</Label>
+                    <Label>Photos (up to {MAX_IMAGES}, JPG/PNG/WebP, max 2 MB each)</Label>
                     <div className="flex flex-wrap gap-2">
                         {existing.map((image) => (
                             <div key={image.id} className="relative size-24 overflow-hidden rounded-lg border">
@@ -152,8 +154,14 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                                     multiple
                                     className="sr-only"
                                     onChange={(e) => {
-                                        const picked = Array.from(e.target.files ?? []).slice(0, slots);
-                                        setFiles((f) => [...f, ...picked]);
+                                        const chosen = Array.from(e.target.files ?? []);
+                                        const fits = chosen.filter((file) => file.size <= MAX_IMAGE_BYTES);
+
+                                        if (fits.length < chosen.length) {
+                                            toast.error('Photos must be 2 MB or smaller. Larger ones were skipped.');
+                                        }
+
+                                        setFiles((f) => [...f, ...fits.slice(0, slots)]);
                                         e.target.value = '';
                                     }}
                                 />

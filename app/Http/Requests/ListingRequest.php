@@ -27,7 +27,7 @@ class ListingRequest extends FormRequest
             'condition' => ['required', 'in:'.implode(',', Listing::CONDITIONS)],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'images' => ['array', 'max:'.Listing::MAX_PHOTOS],
-            'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
+            'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'remove_image_ids' => ['array'],
             'remove_image_ids.*' => ['integer'],
             // Photos to show on the home feed, in order (the first is the cover): "e:<existing id>" or "n:<index of a new upload>".
