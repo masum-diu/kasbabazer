@@ -9,6 +9,12 @@ if [ -z "$APP_KEY" ]; then
     exit 1
 fi
 
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
+    echo "DB_CONNECTION must be pgsql in production (it is '${DB_CONNECTION:-unset}')." >&2
+    echo "Set DB_CONNECTION=pgsql and DB_URL=<your Render Postgres Internal Database URL>." >&2
+    exit 1
+fi
+
 # Render sets PORT (default 10000); Apache must listen on it.
 PORT="${PORT:-10000}"
 sed -ri "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
