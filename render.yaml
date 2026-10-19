@@ -1,11 +1,5 @@
-# Render Blueprint: one Docker web service + one PostgreSQL database.
+# Render Blueprint: one Docker web service using SQLite on a persistent disk.
 # Deploy: Render dashboard > New > Blueprint > pick this repo. Fill in the "sync: false" values when asked.
-databases:
-  - name: kasba-bazar-db
-    plan: basic-256mb
-    databaseName: kasba_bazar
-    user: kasba
-
 services:
   - type: web
     name: kasba-bazar
@@ -13,10 +7,11 @@ services:
     plan: starter            # a persistent disk needs a paid plan
     healthCheckPath: /up
     autoDeploy: true
-    # Uploaded listing photos live here, so they survive redeploys.
+    # The SQLite database file and uploaded photos live on this disk so they survive redeploys.
+    # Keep this service at 1 instance: SQLite cannot be shared between servers.
     disk:
-      name: uploads
-      mountPath: /var/www/html/storage/app/public
+      name: data
+      mountPath: /var/data
       sizeGB: 1
     envVars:
       - key: APP_NAME
@@ -32,11 +27,13 @@ services:
       - key: LOG_CHANNEL
         value: stderr
       - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_URL
-        fromDatabase:
-          name: kasba-bazar-db
-          property: connectionString
+        value: sqlite
+      - key: DB_DATABASE
+        value: /var/data/database.sqlite
+      - key: DB_JOURNAL_MODE
+        value: WAL
+      - key: DB_BUSY_TIMEOUT
+        value: "5000"
       - key: SESSION_DRIVER
         value: database
       - key: CACHE_STORE

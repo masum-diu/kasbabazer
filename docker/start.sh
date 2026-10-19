@@ -9,19 +9,32 @@ if [ -z "$APP_KEY" ]; then
     exit 1
 fi
 
-if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
-    echo "DB_CONNECTION must be pgsql in production (it is '${DB_CONNECTION:-unset}')." >&2
-    echo "Set DB_CONNECTION=pgsql and DB_URL=<your Render Postgres Internal Database URL>." >&2
-    exit 1
+# Data that must survive redeploys lives on the persistent disk (DATA_DIR): the SQLite file and uploaded photos.
+DATA_DIR="${DATA_DIR:-/var/data}"
+
+if [ ! -d "$DATA_DIR" ]; then
+    echo "WARNING: $DATA_DIR does not exist. Attach a persistent disk mounted at $DATA_DIR," >&2
+    echo "         otherwise the database and uploaded photos are lost on every deploy." >&2
+    mkdir -p "$DATA_DIR"
 fi
+
+mkdir -p "$DATA_DIR/uploads"
+export DB_CONNECTION="${DB_CONNECTION:-sqlite}"
+export DB_DATABASE="${DB_DATABASE:-$DATA_DIR/database.sqlite}"
+touch "$DB_DATABASE"
+
+# Uploaded photos: storage/app/public -> persistent disk.
+rm -rf storage/app/public
+ln -s "$DATA_DIR/uploads" storage/app/public
+
+chown -R www-data:www-data "$DATA_DIR"
 
 # Render sets PORT (default 10000); Apache must listen on it.
 PORT="${PORT:-10000}"
 sed -ri "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
-# A mounted persistent disk starts empty and root-owned.
-mkdir -p storage/app/public/listings storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+mkdir -p "$DATA_DIR/uploads/listings" storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 
 php artisan storage:link --force || true
@@ -35,6 +48,9 @@ php artisan db:seed --class=Database\\Seeders\\PlanSeeder --force
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+# artisan ran as root: hand every file it created (SQLite -wal/-shm, caches) back to the web user.
+chown -R www-data:www-data "$DATA_DIR" storage bootstrap/cache
 
 # Daily jobs (plan expiry) without a separate cron service.
 php artisan schedule:work >> storage/logs/schedule.log 2>&1 &
