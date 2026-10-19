@@ -26,6 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a load balancer (Render) the app sees plain HTTP; trust its forwarded headers so URLs and cookies are HTTPS.
+        $middleware->trustProxies(at: '*');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->alias(['admin' => EnsureUserIsAdmin::class]);

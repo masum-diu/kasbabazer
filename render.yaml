@@ -1,0 +1,61 @@
+# Render Blueprint: one Docker web service + one PostgreSQL database.
+# Deploy: Render dashboard > New > Blueprint > pick this repo. Fill in the "sync: false" values when asked.
+databases:
+  - name: kasba-bazar-db
+    plan: basic-256mb
+    databaseName: kasba_bazar
+    user: kasba
+
+services:
+  - type: web
+    name: kasba-bazar
+    runtime: docker
+    plan: starter            # a persistent disk needs a paid plan
+    healthCheckPath: /up
+    autoDeploy: true
+    # Uploaded listing photos live here, so they survive redeploys.
+    disk:
+      name: uploads
+      mountPath: /var/www/html/storage/app/public
+      sizeGB: 1
+    envVars:
+      - key: APP_NAME
+        value: Kasba Bazer
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false          # run: php artisan key:generate --show
+      - key: APP_URL
+        sync: false          # e.g. https://kasba-bazar.onrender.com
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: kasba-bazar-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      # Clerk (Google sign-in)
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      # Site settings
+      - key: ADMIN_EMAILS
+        sync: false          # comma separated, e.g. mmhmasum98@gmail.com
+      - key: BILLING_BKASH_NUMBER
+        sync: false
+      - key: BILLING_NAGAD_NUMBER
+        sync: false
+      - key: FACEBOOK_PAGE_URL
+        sync: false
