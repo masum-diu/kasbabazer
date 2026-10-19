@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { BadgeCheck, MapPin, Star } from 'lucide-react';
 import { useState } from 'react';
 import ListingGrid from '@/components/market/listing-grid';
@@ -46,6 +46,8 @@ export default function SellerShow({ seller, listings, total, reviews, myReview,
     const [rating, setRating] = useState(myReview?.rating ?? 0);
     const [text, setText] = useState(myReview?.review ?? '');
     const [busy, setBusy] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const { auth } = usePage().props;
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,6 +55,7 @@ export default function SellerShow({ seller, listings, total, reviews, myReview,
             preserveScroll: true,
             onStart: () => setBusy(true),
             onFinish: () => setBusy(false),
+            onError: setErrors,
         });
     };
 
@@ -97,7 +100,7 @@ export default function SellerShow({ seller, listings, total, reviews, myReview,
                 <ListingGrid listings={listings} />
             )}
 
-            <section className="mt-10">
+            <section id="reviews" className="mt-10 scroll-mt-20">
                 <h2 className="mb-3 text-lg font-semibold">Reviews</h2>
 
                 {canReview && (
@@ -105,9 +108,20 @@ export default function SellerShow({ seller, listings, total, reviews, myReview,
                         <p className="text-sm font-medium">{myReview ? 'Update your review' : 'Rate this seller'}</p>
                         <Stars value={rating} onPick={setRating} />
                         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} maxLength={1000} placeholder="Share your experience (optional)" aria-label="Review" className="rounded-md border bg-transparent p-2 text-sm" />
-                        <Button type="submit" size="sm" className="self-start" disabled={busy || rating === 0}>Submit review</Button>
+                        <Button type="submit" size="sm" className="self-start" disabled={busy || rating === 0}>{myReview ? 'Update review' : 'Submit review'}</Button>
+                        {rating === 0 && <p className="text-xs text-muted-foreground">Tap a star to choose your rating.</p>}
+                        {(errors.rating || errors.review) && <p className="text-xs text-destructive">{errors.rating ?? errors.review}</p>}
                     </form>
                 )}
+
+                {!auth.user && (
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border p-4">
+                        <p className="text-sm">Bought from this seller? Sign in to rate them.</p>
+                        <Button asChild size="sm"><Link href="/sign-in">Sign in to rate</Link></Button>
+                    </div>
+                )}
+
+                {isOwner && <p className="mb-6 rounded-xl border p-4 text-sm text-muted-foreground">You cannot review your own shop. Buyers can rate you from this page.</p>}
 
                 {reviews.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No reviews yet.</p>

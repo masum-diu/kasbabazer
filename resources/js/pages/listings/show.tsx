@@ -236,6 +236,11 @@ export default function ShowListing({ listing, comments, related, can }: Props) 
                                     </p>
                                 </div>
                             </Link>
+                            {!can.manage && (
+                                <Button asChild size="sm" variant="outline" className="mt-3 w-full gap-1">
+                                    <Link href={`/sellers/${listing.seller.id}#reviews`}><Star className="size-4" /> Rate this seller</Link>
+                                </Button>
+                            )}
                         </div>
                     )}
                 </aside>
