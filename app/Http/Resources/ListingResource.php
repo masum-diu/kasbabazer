@@ -28,9 +28,8 @@ class ListingResource extends JsonResource
             'condition' => $this->condition,
             'status' => $this->status,
             'quantity' => $this->quantity,
-            // The number is only revealed to signed-in users, so it cannot be scraped from public pages.
-            'has_contact' => $this->contact_phone !== null,
-            'contact_phone' => $request->user() ? $this->contact_phone : null,
+            // Phone, WhatsApp and email are only revealed to signed-in users, so they cannot be scraped from public pages.
+            'contact' => $this->contactInfo((bool) $request->user()),
             'views_count' => $this->views_count,
             'likes_count' => $this->likes_count,
             'comments_count' => $this->comments_count,
@@ -55,6 +54,22 @@ class ListingResource extends JsonResource
                 'saved' => in_array($this->id, $saved, true),
                 'reaction' => $reacted[$this->id] ?? null,
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function contactInfo(bool $signedIn): array
+    {
+        $private = ['phone' => $this->contact_phone, 'whatsapp' => $this->contact_whatsapp, 'email' => $this->contact_email];
+
+        return [
+            ...($signedIn ? $private : array_map(fn () => null, $private)),
+            'has_private' => count(array_filter($private)) > 0,
+            'address' => $this->contact_address,
+            'facebook' => $this->contact_facebook,
+            'website' => $this->contact_website,
         ];
     }
 }

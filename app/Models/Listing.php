@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property CarbonInterface|null $published_at
  * @property CarbonInterface|null $boosted_until
  */
-#[Fillable(['category_id', 'location_id', 'title', 'description', 'price', 'is_negotiable', 'condition', 'quantity', 'contact_phone'])]
+#[Fillable(['category_id', 'location_id', 'title', 'description', 'price', 'is_negotiable', 'condition', 'quantity', 'contact_phone', 'contact_whatsapp', 'contact_email', 'contact_address', 'contact_facebook', 'contact_website'])]
 class Listing extends Model
 {
     /** @use HasFactory<ListingFactory> */

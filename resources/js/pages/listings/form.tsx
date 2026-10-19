@@ -50,7 +50,12 @@ export default function ListingForm({ listing, categories, plan, default_phone }
         is_negotiable: listing?.is_negotiable ?? false,
         condition: listing?.condition ?? 'used_good',
         quantity: listing?.quantity ? String(listing.quantity) : '',
-        contact_phone: listing ? (listing.contact_phone ?? '') : (default_phone ?? ''),
+        contact_phone: listing ? (listing.contact?.phone ?? '') : (default_phone ?? ''),
+        contact_whatsapp: listing?.contact?.whatsapp ?? '',
+        contact_email: listing?.contact?.email ?? '',
+        contact_address: listing?.contact?.address ?? '',
+        contact_facebook: listing?.contact?.facebook ?? '',
+        contact_website: listing?.contact?.website ?? '',
     });
     const [files, setFiles] = useState<File[]>([]);
     const [removed, setRemoved] = useState<number[]>([]);
@@ -213,12 +218,24 @@ export default function ListingForm({ listing, categories, plan, default_phone }
                     </div>
                 </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="contact_phone">Contact number <span className="font-normal text-muted-foreground">(optional)</span></Label>
-                    <Input id="contact_phone" type="tel" inputMode="tel" value={values.contact_phone} onChange={(e) => set('contact_phone', e.target.value)} placeholder="01XXXXXXXXX" maxLength={20} />
-                    <p className="text-xs text-muted-foreground">Phone or WhatsApp number for buyers to call. Only signed-in users can see it.</p>
-                    <InputError message={errors.contact_phone} />
-                </div>
+                <fieldset className="grid gap-4 rounded-xl border bg-card p-4 md:grid-cols-2">
+                    <legend className="px-1 text-sm font-medium">Contact information <span className="font-normal text-muted-foreground">(all optional)</span></legend>
+                    <p className="text-xs text-muted-foreground md:col-span-2">Phone, WhatsApp and email are shown only to signed-in users. Address, Facebook and website are public.</p>
+                    {([
+                        ['contact_phone', 'Phone', 'tel', '01XXXXXXXXX'],
+                        ['contact_whatsapp', 'WhatsApp', 'tel', '01XXXXXXXXX'],
+                        ['contact_email', 'Email', 'email', 'name@example.com'],
+                        ['contact_address', 'Address', 'text', 'Shop, road, Kasba'],
+                        ['contact_facebook', 'Facebook page link', 'url', 'https://facebook.com/yourpage'],
+                        ['contact_website', 'Website', 'url', 'https://'],
+                    ] as const).map(([key, label, type, placeholder]) => (
+                        <div key={key} className="grid gap-2">
+                            <Label htmlFor={key}>{label}</Label>
+                            <Input id={key} type={type} value={values[key]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} maxLength={key === 'contact_address' ? 200 : 255} />
+                            <InputError message={errors[key]} />
+                        </div>
+                    ))}
+                </fieldset>
 
                 <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={values.is_negotiable} onChange={(e) => set('is_negotiable', e.target.checked)} />

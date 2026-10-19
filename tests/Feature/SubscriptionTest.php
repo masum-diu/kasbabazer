@@ -198,15 +198,21 @@ class SubscriptionTest extends TestCase
     {
         $user = $this->seller();
 
-        $this->actingAs($user)->post('/listings', $this->payload(['contact_phone' => '01712345678']))->assertRedirect();
+        $this->actingAs($user)->post('/listings', $this->payload([
+            'contact_phone' => '01712345678', 'contact_whatsapp' => '01812345678', 'contact_email' => 'shop@example.com',
+            'contact_address' => 'Main road, Kasba', 'contact_facebook' => 'https://facebook.com/shop', 'contact_website' => 'https://shop.example.com',
+        ]))->assertRedirect();
         $listing = Listing::firstOrFail();
         $this->assertSame('01712345678', $listing->contact_phone);
 
         $this->post('/listings', $this->payload(['contact_phone' => 'call me']))->assertSessionHasErrors('contact_phone');
+        $this->post('/listings', $this->payload(['contact_facebook' => 'javascript:alert(1)', 'contact_email' => 'nope']))->assertSessionHasErrors(['contact_facebook', 'contact_email']);
 
         auth()->logout();
-        $this->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.has_contact', true)->where('listing.contact_phone', null));
-        $this->actingAs(User::factory()->create())->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.contact_phone', '01712345678'));
+        $this->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p
+            ->where('listing.contact.has_private', true)->where('listing.contact.phone', null)->where('listing.contact.whatsapp', null)->where('listing.contact.email', null)
+            ->where('listing.contact.address', 'Main road, Kasba')->where('listing.contact.facebook', 'https://facebook.com/shop'));
+        $this->actingAs(User::factory()->create())->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.contact.phone', '01712345678')->where('listing.contact.email', 'shop@example.com'));
     }
 
     public function test_boost_uses_plan_allowance_and_floats_listing_to_top(): void

@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage, WhenVisible } from '@inertiajs/react';
-import { BadgeCheck, Bookmark, Eye, Heart, MapPin, MessageCircle, Pencil, Phone, Rocket, Share2, Star, ThumbsUp } from 'lucide-react';
+import { BadgeCheck, Bookmark, Eye, Facebook, Globe, Heart, Mail, MapPin, MessageCircle, Pencil, Phone, Rocket, Share2, Star, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import CommentThread from '@/components/market/comment-thread';
@@ -190,20 +190,29 @@ export default function ShowListing({ listing, comments, related, can }: Props) 
                         </div>
                     </div>
 
-                    {listing.has_contact && (
+                    {listing.contact && (listing.contact.has_private || listing.contact.address || listing.contact.facebook || listing.contact.website) && (
                         <div className="rounded-2xl border p-5">
                             <p className="mb-3 text-sm font-medium text-muted-foreground">Contact</p>
-                            {listing.contact_phone ? (
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Button asChild size="sm" className="gap-1">
-                                        <a href={`tel:${listing.contact_phone.replace(/[^+\d]/g, '')}`}><Phone className="size-4" /> {listing.contact_phone}</a>
-                                    </Button>
-                                    <Button asChild size="sm" variant="outline">
-                                        <a href={`https://wa.me/${whatsappNumber(listing.contact_phone)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-                                    </Button>
-                                </div>
-                            ) : (
-                                <Button asChild size="sm" variant="outline"><Link href="/sign-in">Sign in to see the number</Link></Button>
+                            <ul className="flex flex-col gap-2 text-sm">
+                                {listing.contact.phone && (
+                                    <li><a href={`tel:${listing.contact.phone.replace(/[^+\d]/g, '')}`} className="flex items-center gap-2 hover:underline"><Phone className="size-4 text-primary" /> {listing.contact.phone}</a></li>
+                                )}
+                                {listing.contact.whatsapp && (
+                                    <li><a href={`https://wa.me/${whatsappNumber(listing.contact.whatsapp)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline"><MessageCircle className="size-4 text-primary" /> WhatsApp {listing.contact.whatsapp}</a></li>
+                                )}
+                                {listing.contact.email && (
+                                    <li><a href={`mailto:${listing.contact.email}`} className="flex items-center gap-2 break-all hover:underline"><Mail className="size-4 text-primary" /> {listing.contact.email}</a></li>
+                                )}
+                                {listing.contact.address && <li className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-primary" /> {listing.contact.address}</li>}
+                                {listing.contact.facebook && (
+                                    <li><a href={listing.contact.facebook} target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-2 break-all hover:underline"><Facebook className="size-4 text-primary" /> Facebook page</a></li>
+                                )}
+                                {listing.contact.website && (
+                                    <li><a href={listing.contact.website} target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-2 break-all hover:underline"><Globe className="size-4 text-primary" /> {listing.contact.website.replace(/^https?:\/\//, '')}</a></li>
+                                )}
+                            </ul>
+                            {listing.contact.has_private && !listing.contact.phone && !listing.contact.whatsapp && !listing.contact.email && (
+                                <Button asChild size="sm" variant="outline" className="mt-3"><Link href="/sign-in">Sign in to see phone &amp; email</Link></Button>
                             )}
                         </div>
                     )}

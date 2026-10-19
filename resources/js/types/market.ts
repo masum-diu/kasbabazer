@@ -37,8 +37,15 @@ export type Listing = {
     condition: string;
     status: string;
     quantity: number | null;
-    has_contact?: boolean;
-    contact_phone?: string | null;
+    contact?: {
+        phone: string | null;
+        whatsapp: string | null;
+        email: string | null;
+        has_private: boolean;
+        address: string | null;
+        facebook: string | null;
+        website: string | null;
+    };
     views_count: number;
     likes_count: number;
     comments_count: number;
