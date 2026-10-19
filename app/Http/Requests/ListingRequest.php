@@ -25,7 +25,7 @@ class ListingRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'is_negotiable' => ['boolean'],
             'condition' => ['required', 'in:'.implode(',', Listing::CONDITIONS)],
-            'quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'images' => ['array', 'max:'.Listing::MAX_PHOTOS],
             'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
             'remove_image_ids' => ['array'],

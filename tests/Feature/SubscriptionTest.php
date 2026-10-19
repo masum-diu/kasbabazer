@@ -177,6 +177,19 @@ class SubscriptionTest extends TestCase
         $this->assertSame([$created[4]], $listing->images()->where('on_feed', true)->pluck('id')->all());
     }
 
+    public function test_quantity_is_optional_for_items_without_stock(): void
+    {
+        $user = $this->seller();
+
+        $this->actingAs($user)->post('/listings', $this->payload(['quantity' => '']))->assertRedirect();
+        $listing = Listing::firstOrFail();
+        $this->assertNull($listing->quantity);
+
+        $this->get("/listings/{$listing->slug}")->assertInertia(fn (Assert $p) => $p->where('listing.quantity', null));
+        // A quantity, when given, must still be a positive number.
+        $this->post('/listings', $this->payload(['quantity' => 0]))->assertSessionHasErrors('quantity');
+    }
+
     public function test_boost_uses_plan_allowance_and_floats_listing_to_top(): void
     {
         $seller = $this->seller();

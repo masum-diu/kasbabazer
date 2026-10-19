@@ -46,7 +46,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
         price: listing ? String(listing.price) : '',
         is_negotiable: listing?.is_negotiable ?? false,
         condition: listing?.condition ?? 'used_good',
-        quantity: String(listing?.quantity ?? 1),
+        quantity: listing?.quantity ? String(listing.quantity) : '',
     });
     const [files, setFiles] = useState<File[]>([]);
     const [removed, setRemoved] = useState<number[]>([]);
@@ -197,8 +197,8 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         <InputError message={errors.price} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="quantity">Quantity</Label>
-                        <Input id="quantity" type="number" min={1} value={values.quantity} onChange={(e) => set('quantity', e.target.value)} required />
+                        <Label htmlFor="quantity">Quantity <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                        <Input id="quantity" type="number" min={1} value={values.quantity} onChange={(e) => set('quantity', e.target.value)} placeholder="Leave empty if not applicable" />
                         <InputError message={errors.quantity} />
                     </div>
                 </div>

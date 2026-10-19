@@ -36,7 +36,7 @@ export type Listing = {
     is_negotiable: boolean;
     condition: string;
     status: string;
-    quantity: number;
+    quantity: number | null;
     views_count: number;
     likes_count: number;
     comments_count: number;

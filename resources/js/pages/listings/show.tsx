@@ -132,7 +132,7 @@ export default function ShowListing({ listing, comments, related, can }: Props) 
                             <span className="flex items-center gap-1"><MapPin className="size-3" />{listing.location?.name ?? 'Kasba'}</span>
                             <span>Listed {timeAgo(listing.published_at)}</span>
                             <span className="flex items-center gap-1"><Eye className="size-3" />{listing.views_count} views</span>
-                            <span>Qty {listing.quantity}</span>
+                            {listing.quantity !== null && <span>Qty {listing.quantity}</span>}
                         </p>
 
                         {can.manage ? (
