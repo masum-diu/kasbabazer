@@ -97,7 +97,7 @@ class ListingController extends Controller
         return [
             'name' => $plan->name,
             'listing_limit' => $plan->listing_limit,
-            'photo_limit' => $plan->photo_limit,
+            'photo_limit' => min($plan->photo_limit, Listing::MAX_PHOTOS),
             'active_listings' => $this->subscriptions->activeListingCount($user),
             'boosts_left' => $this->subscriptions->boostsRemaining($user),
         ];
@@ -122,7 +122,7 @@ class ListingController extends Controller
             return $redirect;
         }
 
-        $data = $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft']);
+        $data = $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft', 'cover']);
 
         if (! $request->boolean('save_as_draft')) {
             $this->subscriptions->assertCanPublish($request->user());
@@ -134,6 +134,7 @@ class ListingController extends Controller
             $data,
             $request->file('images', []),
             publish: ! $request->boolean('save_as_draft'),
+            cover: $request->input('cover'),
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Listing created.']);
@@ -161,9 +162,10 @@ class ListingController extends Controller
 
         $this->listings->update(
             $listing,
-            $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft']),
+            $request->safe()->except(['images', 'remove_image_ids', 'save_as_draft', 'cover']),
             $request->file('images', []),
             array_map('intval', $request->input('remove_image_ids', [])),
+            $request->input('cover'),
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Listing updated.']);

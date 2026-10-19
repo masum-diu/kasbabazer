@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Listing;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\SubscriptionService;
@@ -88,7 +89,7 @@ class PlanController extends Controller
             'name' => $p->name,
             'price' => $p->price,
             'listing_limit' => $p->listing_limit,
-            'photo_limit' => $p->photo_limit,
+            'photo_limit' => min($p->photo_limit, Listing::MAX_PHOTOS),
             'boosts_per_period' => $p->boosts_per_period,
             'verified_badge' => $p->verified_badge,
         ];

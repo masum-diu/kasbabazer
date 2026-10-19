@@ -24,6 +24,9 @@ class Listing extends Model
     /** @use HasFactory<ListingFactory> */
     use HasFactory, SoftDeletes;
 
+    /** Most photos any listing can have, whatever the plan. */
+    public const MAX_PHOTOS = 5;
+
     public const CONDITIONS = ['new', 'used_like_new', 'used_good', 'used_fair'];
 
     public const STATUSES = ['draft', 'active', 'reserved', 'sold', 'hidden', 'expired'];

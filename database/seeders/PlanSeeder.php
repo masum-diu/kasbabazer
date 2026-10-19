@@ -14,9 +14,9 @@ class PlanSeeder extends Seeder
     {
         $plans = [
             ['slug' => 'free', 'name' => 'Free', 'price' => 0, 'listing_limit' => 5, 'photo_limit' => 3, 'boosts_per_period' => 0, 'verified_badge' => false, 'sort_order' => 0],
-            ['slug' => 'basic', 'name' => 'Basic', 'price' => 149, 'listing_limit' => 30, 'photo_limit' => 6, 'boosts_per_period' => 2, 'verified_badge' => false, 'sort_order' => 1],
-            ['slug' => 'pro', 'name' => 'Pro', 'price' => 399, 'listing_limit' => 150, 'photo_limit' => 6, 'boosts_per_period' => 8, 'verified_badge' => true, 'sort_order' => 2],
-            ['slug' => 'shop', 'name' => 'Shop', 'price' => 799, 'listing_limit' => null, 'photo_limit' => 10, 'boosts_per_period' => 20, 'verified_badge' => true, 'sort_order' => 3],
+            ['slug' => 'basic', 'name' => 'Basic', 'price' => 149, 'listing_limit' => 30, 'photo_limit' => 5, 'boosts_per_period' => 2, 'verified_badge' => false, 'sort_order' => 1],
+            ['slug' => 'pro', 'name' => 'Pro', 'price' => 399, 'listing_limit' => 150, 'photo_limit' => 5, 'boosts_per_period' => 8, 'verified_badge' => true, 'sort_order' => 2],
+            ['slug' => 'shop', 'name' => 'Shop', 'price' => 799, 'listing_limit' => null, 'photo_limit' => 5, 'boosts_per_period' => 20, 'verified_badge' => true, 'sort_order' => 3],
         ];
 
         foreach ($plans as $plan) {

@@ -141,6 +141,31 @@ class SubscriptionTest extends TestCase
         $this->actingAs($user)->post('/listings', $this->payload(['images' => $files(3)]))->assertRedirect();
     }
 
+    public function test_listing_never_holds_more_than_five_photos_and_the_seller_picks_the_cover(): void
+    {
+        $user = $this->seller();
+        $admin = User::factory()->admin()->create();
+        $sub = $this->pay($user, 'shop');
+        $this->actingAs($admin)->post("/admin/payments/{$sub->id}/confirm")->assertRedirect();
+
+        $files = fn (int $n) => array_map(fn ($i) => UploadedFile::fake()->createWithContent("p{$i}.png", (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==')), range(1, $n));
+
+        Storage::fake('public');
+        // Even the top plan stops at 5 photos.
+        $this->actingAs($user)->post('/listings', $this->payload(['images' => $files(6)]))->assertSessionHasErrors('images');
+
+        // Choose the 4th upload as the cover: it moves to the front.
+        $this->post('/listings', $this->payload(['images' => $files(5), 'cover' => 'n:3']))->assertRedirect();
+        $listing = Listing::with('images')->firstOrFail();
+        $created = $listing->images()->reorder('id')->pluck('id')->all();
+        $this->assertCount(5, $created);
+        $this->assertSame($created[3], $listing->images->first()->id);
+
+        // Switch the cover to an existing photo while editing.
+        $this->post("/listings/{$listing->slug}/update", $this->payload(['cover' => 'e:'.$created[1]]))->assertRedirect();
+        $this->assertSame($created[1], $listing->images()->first()->id);
+    }
+
     public function test_boost_uses_plan_allowance_and_floats_listing_to_top(): void
     {
         $seller = $this->seller();

@@ -26,10 +26,12 @@ class ListingRequest extends FormRequest
             'is_negotiable' => ['boolean'],
             'condition' => ['required', 'in:'.implode(',', Listing::CONDITIONS)],
             'quantity' => ['required', 'integer', 'min:1', 'max:10000'],
-            'images' => ['array', 'max:6'],
+            'images' => ['array', 'max:'.Listing::MAX_PHOTOS],
             'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
             'remove_image_ids' => ['array'],
             'remove_image_ids.*' => ['integer'],
+            // Which photo leads the post and the home feed: "e:<existing id>" or "n:<index of a new upload>".
+            'cover' => ['nullable', 'string', 'regex:/^[en]:\d+$/'],
             'save_as_draft' => ['boolean'],
         ];
     }

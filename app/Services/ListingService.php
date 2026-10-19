@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Listing;
+use App\Models\ListingImage;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -70,9 +71,9 @@ class ListingService
      * @param  array<string, mixed>  $data
      * @param  array<int, UploadedFile>  $images
      */
-    public function create(User $user, array $data, array $images = [], bool $publish = true): Listing
+    public function create(User $user, array $data, array $images = [], bool $publish = true, ?string $cover = null): Listing
     {
-        return DB::transaction(function () use ($user, $data, $images, $publish) {
+        return DB::transaction(function () use ($user, $data, $images, $publish, $cover) {
             $listing = new Listing($data);
             $listing->forceFill([
                 'user_id' => $user->id,
@@ -81,7 +82,7 @@ class ListingService
                 'published_at' => $publish ? now() : null,
             ])->save();
 
-            $this->storeImages($listing, $images);
+            $this->applyCover($listing, $cover, $this->storeImages($listing, $images));
 
             return $listing;
         });
@@ -92,9 +93,9 @@ class ListingService
      * @param  array<int, UploadedFile>  $images
      * @param  array<int, int>  $removeImageIds
      */
-    public function update(Listing $listing, array $data, array $images = [], array $removeImageIds = []): Listing
+    public function update(Listing $listing, array $data, array $images = [], array $removeImageIds = [], ?string $cover = null): Listing
     {
-        return DB::transaction(function () use ($listing, $data, $images, $removeImageIds) {
+        return DB::transaction(function () use ($listing, $data, $images, $removeImageIds, $cover) {
             $listing->update($data);
 
             foreach ($listing->images()->whereIn('id', $removeImageIds)->get() as $image) {
@@ -104,7 +105,7 @@ class ListingService
                 $image->delete();
             }
 
-            $this->storeImages($listing, $images);
+            $this->applyCover($listing, $cover, $this->storeImages($listing, $images));
 
             return $listing;
         });
@@ -155,10 +156,12 @@ class ListingService
 
     /**
      * @param  array<int, UploadedFile>  $images
+     * @return array<int, ListingImage> the stored images, in upload order
      */
-    private function storeImages(Listing $listing, array $images): void
+    private function storeImages(Listing $listing, array $images): array
     {
         $order = (int) $listing->images()->max('sort_order') + 1;
+        $stored = [];
 
         foreach ($images as $file) {
             // store() generates a random filename; the client's name is never used.
@@ -166,11 +169,36 @@ class ListingService
             if ($path === false) {
                 continue;
             }
-            $listing->images()->create([
+            $stored[] = $listing->images()->create([
                 'path' => $path,
                 'url' => Storage::disk('public')->url($path),
                 'sort_order' => $order++,
             ]);
+        }
+
+        return $stored;
+    }
+
+    /**
+     * Move the chosen photo to the front. The first photo is the cover used on the home feed and cards.
+     *
+     * @param  array<int, ListingImage>  $stored
+     */
+    private function applyCover(Listing $listing, ?string $cover, array $stored): void
+    {
+        if (! $cover || ! preg_match('/^([en]):(\d+)$/', $cover, $m)) {
+            return;
+        }
+
+        $coverId = $m[1] === 'e' ? (int) $m[2] : ($stored[(int) $m[2]]->id ?? null);
+        $ids = $listing->images()->pluck('id')->all(); // already in sort order
+
+        if ($coverId === null || ! in_array($coverId, $ids, true)) {
+            return;
+        }
+
+        foreach ([$coverId, ...array_diff($ids, [$coverId])] as $position => $id) {
+            ListingImage::whereKey($id)->update(['sort_order' => $position]);
         }
     }
 

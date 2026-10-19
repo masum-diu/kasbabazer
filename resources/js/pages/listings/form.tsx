@@ -15,8 +15,18 @@ type Props = {
 };
 
 
+function CoverButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+    return active ? (
+        <span className="absolute inset-x-0 bottom-0 bg-primary/90 py-0.5 text-center text-[10px] font-semibold text-primary-foreground">Cover</span>
+    ) : (
+        <button type="button" onClick={onClick} className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[10px] font-medium text-white hover:bg-black/80">
+            Make cover
+        </button>
+    );
+}
+
 export default function ListingForm({ listing, categories, plan }: Props) {
-    const MAX_IMAGES = plan.photo_limit;
+    const MAX_IMAGES = Math.min(plan.photo_limit, 5);
     const atLimit = plan.listing_limit !== null && plan.active_listings >= plan.listing_limit;
     const editing = listing !== null;
     const [values, setValues] = useState({
@@ -30,11 +40,21 @@ export default function ListingForm({ listing, categories, plan }: Props) {
     });
     const [files, setFiles] = useState<File[]>([]);
     const [removed, setRemoved] = useState<number[]>([]);
+    // The cover is the photo that leads the post and the home feed. null = first photo.
+    const [cover, setCover] = useState<{ type: 'e'; id: number } | { type: 'n'; file: File } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
 
     const existing = (listing?.images ?? []).filter((i) => !removed.includes(i.id));
     const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+    const isCover = (kind: 'e' | 'n', ref: number | File) => {
+        if (cover) {
+            return cover.type === kind && (cover.type === 'e' ? cover.id === ref : cover.file === ref);
+        }
+
+        // Default: the first photo.
+        return existing.length > 0 ? kind === 'e' && existing[0].id === ref : kind === 'n' && files[0] === ref;
+    };
     const slots = MAX_IMAGES - existing.length - files.length;
 
     const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
@@ -51,6 +71,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                 save_as_draft: asDraft ? 1 : 0,
                 images: files,
                 remove_image_ids: removed,
+                ...(cover && (cover.type === 'e' ? { cover: `e:${cover.id}` } : files.includes(cover.file) ? { cover: `n:${files.indexOf(cover.file)}` } : {})),
             },
             {
                 forceFormData: true,
@@ -89,6 +110,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         {existing.map((image) => (
                             <div key={image.id} className="relative size-24 overflow-hidden rounded-lg border">
                                 <img src={image.url} alt="" className="size-full object-cover" />
+                                <CoverButton active={isCover('e', image.id)} onClick={() => setCover({ type: 'e', id: image.id })} />
                                 <button type="button" aria-label="Remove photo" onClick={() => setRemoved((r) => [...r, image.id])} className="absolute top-1 right-1 rounded-full bg-background/90 p-0.5">
                                     <X className="size-3" />
                                 </button>
@@ -97,6 +119,7 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                         {previews.map((src, i) => (
                             <div key={src} className="relative size-24 overflow-hidden rounded-lg border">
                                 <img src={src} alt="" className="size-full object-cover" />
+                                <CoverButton active={isCover('n', files[i])} onClick={() => setCover({ type: 'n', file: files[i] })} />
                                 <button type="button" aria-label="Remove photo" onClick={() => setFiles((f) => f.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 rounded-full bg-background/90 p-0.5">
                                     <X className="size-3" />
                                 </button>
@@ -120,6 +143,9 @@ export default function ListingForm({ listing, categories, plan }: Props) {
                             </label>
                         )}
                     </div>
+                    {existing.length + files.length > 1 && (
+                        <p className="text-xs text-muted-foreground">Tap <strong>Make cover</strong> on a photo to choose the main one. The home feed shows the cover plus up to 2 more photos.</p>
+                    )}
                     <InputError message={errors.images ?? errors['images.0'] ?? errors.plan} />
                 </div>
 

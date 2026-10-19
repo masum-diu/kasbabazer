@@ -54,7 +54,7 @@ class SubscriptionService
 
     public function photoLimit(User $user): int
     {
-        return $this->planFor($user)->photo_limit;
+        return min($this->planFor($user)->photo_limit, Listing::MAX_PHOTOS);
     }
 
     public function boostsUsed(User $user): int
