@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="clothes">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(280 70% 82%)"/><stop offset="1" stop-color="hsl(320 70% 70%)"/></linearGradient></defs>
+<rect width="800" height="600" fill="url(#g)"/>
+<circle cx="510" cy="240" r="150" fill="#fff" fill-opacity=".18"/>
+<circle cx="430" cy="430" r="155" fill="#fff" fill-opacity=".14"/>
+<text x="400" y="330" font-size="230" text-anchor="middle" font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif">👕</text>
+<text x="400" y="500" font-size="44" text-anchor="middle" fill="#000" fill-opacity=".45" font-family="system-ui,sans-serif">clothes</text>
+</svg>

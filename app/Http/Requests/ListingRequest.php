@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\Listing;
+use Illuminate\Foundation\Http\FormRequest;
+
+class ListingRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true; // Ownership is enforced by ListingPolicy in the controller.
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'title' => ['required', 'string', 'min:3', 'max:120'],
+            'description' => ['required', 'string', 'min:10', 'max:5000'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+            'price' => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'is_negotiable' => ['boolean'],
+            'condition' => ['required', 'in:'.implode(',', Listing::CONDITIONS)],
+            'quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'images' => ['array', 'max:6'],
+            'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
+            'remove_image_ids' => ['array'],
+            'remove_image_ids.*' => ['integer'],
+            'save_as_draft' => ['boolean'],
+        ];
+    }
+}
